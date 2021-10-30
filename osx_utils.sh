@@ -522,24 +522,6 @@ function fuse_macos_intel_arm64 {
 }
 
 function wrap_wheel_builder {
-    if [[ "${PLAT:-}" == "universal2" ]]; then
-        if [[ "$(uname -m)" == "arm64" ]]; then
-            (macos_intel_cross_build_setup && $@)
-            rm -rf *-stamp
-            (macos_arm64_native_build_setup && $@)
-        else
-            (macos_intel_native_build_setup && $@)
-            rm -rf *-stamp
-            (macos_arm64_cross_build_setup && $@)
-        fi
-        fuse_macos_intel_arm64
-    elif [[ "${PLAT:-}" == "arm64" ]]; then
-        if [[ "$(uname -m)" == "arm64" ]]; then
-            (macos_arm64_native_build_setup && $@)
-        else
-            (macos_arm64_cross_build_setup && $@)
-        fi
-    else
-        (macos_intel_native_build_setup && $@)
-    fi
+    echo "using hacked wrap_wheel_builder ***"
+    (macos_intel_native_build_setup && $@)
 }
