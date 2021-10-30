@@ -540,6 +540,6 @@ function wrap_wheel_builder {
             (macos_arm64_cross_build_setup && $@)
         fi
     else
-        $@
+        (macos_intel_native_build_setup && $@)
     fi
 }
