@@ -20,11 +20,6 @@ if [ -n "$IS_MACOS" ]; then
         ARCH_FLAGS=${ARCH_FLAGS:-"-arch i386 -arch x86_64"}
     elif [[ $PLAT == x86_64 ]]; then
         ARCH_FLAGS=${ARCH_FLAGS:-"-arch x86_64"}
-    elif [[ $PLAT == arm64 ]]; then
-        ARCH_FLAGS=${ARCH_FLAGS:-"-arch arm64"}
-    elif [[ $PLAT == universal2 ]]; then
-        # Do nothing as we are going with fusing wheels
-        ARCH_FLAGS=${ARCH_FLAGS:-}
     else
         echo "Invalid platform = '$PLAT'. Supported values are 'intel', 'x86_64', 'arm64' or 'universal2'"
         exit 1

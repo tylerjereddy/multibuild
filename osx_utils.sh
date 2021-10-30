@@ -105,9 +105,7 @@ function macpython_sdk_list_for_version {
     local _major=${_ver%%.*}
     local _return
 
-    if [ "$(uname -m)" = "arm64" ]; then
-        _return="11.0"
-    elif [ "$_major" -eq "2" ]; then
+    if [ "$_major" -eq "2" ]; then
         [ $(lex_ver $_ver) -lt $(lex_ver 2.7.18) ] && _return="10.6"
         [ $(lex_ver $_ver) -ge $(lex_ver 2.7.15) ] && _return="$_return 10.9"
     elif [ "$_major" -eq "3" ]; then
@@ -165,16 +163,8 @@ function pyinst_fname_for_version {
     # creates intel only wheels by default. When PLAT=universal2
     # we set the env variable _PYTHON_HOST_PLATFORM to change this
     # default.
-    if [ "$(uname -m)" == "arm64" ] || [ $(lex_ver $py_version) -ge $(lex_ver 3.10.0) ]; then
-      if [ "$py_version" == "3.9.1" ]; then
-        echo "python-${py_version}-macos11.0.${inst_ext}"
-      else
-        echo "python-${py_version}-macos11.${inst_ext}"
-      fi
-    else
-      local py_osx_ver=${2:-$(macpython_sdk_for_version $py_version)}
-      echo "python-${py_version}-macosx${py_osx_ver}.${inst_ext}"
-    fi
+    local py_osx_ver=${2:-$(macpython_sdk_for_version $py_version)}
+    echo "python-${py_version}-macosx${py_osx_ver}.${inst_ext}"
 }
 
 function get_macpython_arch {
@@ -468,57 +458,6 @@ function macos_intel_native_build_setup {
 function macos_intel_cross_build_setup {
     echo "universal2 builds on arm64 are not supported yet."
     exit 1
-}
-
-function macos_arm64_cross_build_setup {
-    # Setup cross build for single arch arm_64 wheels
-    export PLAT="arm64"
-    export BUILD_PREFIX=/opt/arm64-builds
-    sudo mkdir -p $BUILD_PREFIX/lib $BUILD_PREFIX/include
-    sudo chown -R $USER $BUILD_PREFIX
-    update_env_for_build_prefix
-    export _PYTHON_HOST_PLATFORM="macosx-11.0-arm64"
-    export CFLAGS+=" -arch arm64"
-    export CXXFLAGS+=" -arch arm64"
-    export CPPFLAGS+=" -arch arm64"
-    export ARCHFLAGS+=" -arch arm64"
-    export FCFLAGS+=" -arch arm64"
-    export FC=$FC_ARM64
-    export F90=${F90_ARM64:-${FC}}
-    export F77=${F77_ARM64:-${FC}}
-    export MACOSX_DEPLOYMENT_TARGET="11.0"
-    export CROSS_COMPILING=1
-    export LDFLAGS+=" -arch arm64 -L$BUILD_PREFIX/lib -Wl,-rpath,$BUILD_PREFIX/lib ${FC_ARM64_LDFLAGS:-}"
-    # This would automatically let autoconf know that we are cross compiling for arm64 darwin
-    export host_alias="aarch64-apple-darwin20.0.0"
-}
-
-function macos_arm64_native_build_setup {
-    # Setup native build for single arch arm_64 wheels
-    export PLAT="arm64"
-    # We don't want universal2 builds and only want an arm64 build
-    export _PYTHON_HOST_PLATFORM="macosx-11.0-arm64"
-    export ARCHFLAGS+="-arch arm64"
-    $@
-}
-
-function fuse_macos_intel_arm64 {
-    local wheelhouse=$(abspath ${WHEEL_SDIR:-wheelhouse})
-    local py_osx_ver=$(echo ${MB_PYTHON_OSX_VER} | sed "s/\./_/g")
-    mkdir -p tmp_fused_wheelhouse
-    for whl in $wheelhouse/*.whl; do
-       if [[ "$whl" == *macosx_${py_osx_ver}_x86_64.whl ]]; then
-           whl_base=$(echo $whl | rev | cut -c 23- | rev)
-           if [[ -f "${whl_base}macosx_11_0_arm64.whl" ]]; then
-               delocate-fuse $whl "${whl_base}macosx_11_0_arm64.whl" -w tmp_fused_wheelhouse
-               mv tmp_fused_wheelhouse/$(basename $whl) $wheelhouse/$(basename ${whl_base})macosx_${py_osx_ver}_universal2.whl
-               # Since we want one wheel that's installable for testing we are deleting the *_x86_64 wheel.
-               # We are not deleting arm64 wheel because the size is lower and homebrew/conda-forge python
-               # will use them by default
-               rm $whl
-           fi
-       fi
-    done
 }
 
 function wrap_wheel_builder {
